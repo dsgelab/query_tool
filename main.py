@@ -7,10 +7,11 @@ from mingpt.trainer import QandADataset
 from mingpt.utils import sample
 import torch
 import re
-from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
 from fuzzywuzzy import process
 from flask import Flask, request, jsonify
+from ontoma import OnToma
+otmap = OnToma()
+onto = json.load(open('/Users/feiwang/Documents/Projects/query_tool_contents/out_ontology_r6v1.json', 'r'))
 
 db_path = '/Users/feiwang/Documents/Projects/query_tool_contents/registry.sl3'
 trainer_nlg_path = '/Users/feiwang/Documents/Projects/query_tool_contents/trainer_nlg.pickle'
@@ -34,21 +35,25 @@ action_mapping = {
     'select count ( * ) from long_registry': 'SELECT counts FROM fevent_count WHERE'
 }
 
-# prepare a pedigree
-ep_df = pd.read_excel(ep_path, sheet_name='Sheet 1', usecols=['NAME','INCLUDE'])
-ep_df = ep_df.dropna()
-parents, children = [], []
-for i,row in ep_df.iterrows():
-    kids = row.INCLUDE.split('|')
-    children += kids
-    parents += [row.NAME]*len(kids)
-ep_tree = pd.DataFrame({'parents': parents, 'children': children})
-
 # prepare a dictionary for finngen ep mapping
-ep_df = pd.read_excel(ep_path, sheet_name='Sheet 1', usecols=['NAME','LONGNAME','OMIT'])
+ep_df = pd.read_excel(ep_path, sheet_name='Sheet 1', usecols=['NAME', 'LONGNAME', 'OMIT'])
+ep_df = ep_df[ep_df.LONGNAME.notna()]
+ep_full = dict(zip(ep_df.NAME, ep_df.LONGNAME))
 ep_df = ep_df[ep_df.OMIT.isna()][['NAME', 'LONGNAME']]
 ep_df = ep_df.dropna()
-ep_display = dict(zip(ep_df.LONGNAME, ep_df.NAME))
+ep_omit = dict(zip(ep_df.NAME, ep_df.LONGNAME))
+
+onto_efo, onto_desc = {}, {}
+for i in onto.keys():
+    onto_result = onto[i].get('EFO', 'None')
+    if onto_result != 'None':
+        if len(onto_result) == 1:
+            onto_efo[i] = onto[i]['EFO'][0]
+        else:
+            for j in range(len(onto[i]['EFO'])):
+                onto_efo[i+'-'+str(j)] = onto[i]['EFO'][j]
+    if onto[i].get('description'):
+        onto_desc[i] = onto[i]['description']
 
 app = Flask(__name__, static_url_path='')
 
@@ -120,24 +125,34 @@ def capture_ep(nlg_res, browser, txt):  # todo: replaced by lstm model
         return {}, txt + txt_dict['ep_failed_to_find']
 
 
-def get_children(ep):
-    children_short = ep_tree[ep_tree.parents == ep].children.tolist()
-    children_long = []
-    for i in children_short:
-        try:
-            children_long.append(list(ep_display.keys())[list(ep_display.values()).index(i)])
-        except:
-            children_long.append('* endpoint omited')
-    return children_long
-
-
-def get_parent(ep):
-    parent_short = ep_tree[ep_tree.children == 'F5_BEHAVE'].parents.tolist()[0]
+def map_onto(disease):
+    ontos = otmap.find_term(disease)
     try:
-        parent_long = list(ep_display.keys())[list(ep_display.values()).index(parent_short)]
-    except:
-        parent_long = '* endpoint omited'
-    return parent_long
+        mapped_id = ontos[0].id_normalised.split(':')
+        if len(mapped_id) == 0:
+            return 'fail'
+        if mapped_id[0] != 'EFO':
+            mapped_eps = process.extract(ontos[0].label, ep_full.values())[:3]
+            mapped_ep_id = [list(ep_full.keys())[list(ep_full.values()).index(i[0])] for i in mapped_eps]
+            return mapped_ep_id
+        else:
+            efo = mapped_id[1]
+            return get_keys_by_value(onto_efo, efo)
+    except Exception as e:
+        print(e)
+        return 'error'
+#     if len(this) == 1:
+#         ontos[0].id_normalised.split(':')[1]
+#     else:
+#         [ontos[i].id_normalised.split(':')[1] for i in ontos]
+
+def get_keys_by_value(dictOfElements, valueToFind):
+    listOfKeys = list()
+    listOfItems = dictOfElements.items()
+    for item  in listOfItems:
+        if item[1] == valueToFind:
+            listOfKeys.append(item[0])
+    return  listOfKeys
 
 
 def write_query(nlg_res, ep):
