@@ -1,0 +1,9 @@
+.scroll {
+    overflow-y: scroll;
+    overflow-x: hidden; /* scroll hidden auto*/
+}
+
+.home {
+    background: white no-repeat center center fixed;
+    background-size: cover;
+}

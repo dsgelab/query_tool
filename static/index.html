@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Small Q&A Demo</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="../css/base.css">
+    <!--<script type="text/javascript">-->
+        <!---->
+    <!--</script>-->
+</head>
+<body class="home">
+    <nav class="navbar navbar-fixed-top" style="background-color: #336ca9;">
+        <div class="navbar-header">
+            <h4 style="color: white">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A smart tool for querying FinRegistry data - Test version</h4>
+        </div>
+
+    </nav>
+    <div class="container-fluid">
+        <div class="row" style="padding: 2% 4% 0 4%;">
+            <div class="col-md-7">
+                <b><h5>Question: </h5></b>
+                <u>Currently, we can process two types of questions.</u><br>
+                <i>1) Number of people diagnosed with one disease</i><br>
+                <i>2) Mean age at the first event of one disease</i><br>
+<!--                <i>3) Number of people who die of one disease</i><br>-->
+<!--                <i>4) Mean age of people who die of one disease</i><br>--><br>
+                <input type="text" id="prompt" placeholder="What is your question?" value="" style="width: 95%; margin: 5px; border-radius:5px;border: 2px solid #336ca9; padding:10px; text-align: center; font-size: 12pt;"><br>
+                <button id="submit" style="width: 100px; margin-top: 15px; margin-left: 5px; border-radius:5px;border: 2px solid #336ca9; text-align: center; color: white; background: #336ca9; font-size: 12pt; padding:10px;">
+                    Query
+                </button>
+                <img src="loading.gif" id="img" style="height: 45px; display:none;">
+                <div id="curr_prompt" style="width: 95%; margin: 5px; font-size: 12pt; padding:10px;"><br><br></div>
+                <b><h5>Answer: </h5></b>
+                <div class="scroll" id="result" style="height:200px; width: 95%;margin: 5px; border-radius:5px;border: 2px solid #336ca9; font-size: 12pt; padding:10px;"></div>
+            </div>
+            <div class="col-md-5">
+                <!-- <input id="prior_text" value="" style="width: 95%; margin: 15px; border:transparent; text-align: center;font-size: 12pt; padding:15px;"> -->
+                <div id="form" class="scroll" style="height: 630px;"></div>
+                <br>
+                <!-- <input id="post_text" value="" style="width: 95%; margin: 15px; border:transparent; text-align: center;font-size: 12pt; padding:15px;"> -->
+            </div>
+
+        </div>
+        <input id="secret_box" style="display:none">
+    </div>
+
+
+    <script type="text/javascript">
+        $('#submit').click(function () {
+            $("#result").empty;
+            $("#curr_prompt").empty();
+            $("#curr_prompt").append('<br><br>');
+            $("#result").empty();
+            $('#form').html('');
+            var prompt = $('#prompt').val();
+            if (prompt == ""){
+                alert("Please put your question in the text box.");
+            } else{
+                $('#img').show();
+//                $("#secret_box").hide();
+                var input = JSON.stringify({'prompt' : prompt});
+                $.ajax({
+                    datatype: 'json',
+                    url: '/translate',
+                    type: 'POST',
+                    data: input,
+                    contentType: "application/json; charset=utf-8",
+                    success: function(message){
+                        var nlg_res = message['message']['answer'];
+                        var text = message['message']['text'];
+                        var choice_dict = message['message']['ep_dict'];
+
+                        alert(JSON.stringify(choice_dict));
+                        $('#img').hide();
+
+                        if (jQuery.isEmptyObject(choice_dict)) {
+                            $("#form").append('<div class="scroll"><b>'+text+'</b><br><br>');
+                            //$("#secret_box").val(nlg_res); // still need to post nlg_res there?
+                        } else {
+                            $("#form").append('<div class="scroll"><p style="color:#336ca9"><b>Please specify the disease you query:</b></p>');
+                            for (const key in choice_dict) {
+                                var option = '<label><input type="radio" name="disease" value="'+ key+'"> '+choice_dict[key]+'</label><br>';
+                                $("#form").append(option);
+                            }
+                            // todo: object is ordered by alphabets
+                            $("#form").append('</div><br>');
+                            $("#form").append('<button id="sub">Submit</button>');
+                            $("#secret_box").val(nlg_res);
+                            // alert(JSON.stringify($('#secret_box').val()));
+                        }
+
+                        $('#sub').click(function () {
+                            // TODO: what if no value is checked or no answer is filled?
+
+                            $(this).prop("disabled",true);
+                            var nlg_res = $('#secret_box').val();  // res is a string
+                            var ep = $("input[name='disease']:checked").val();
+
+                            var input = JSON.stringify({'nlg_res':nlg_res, 'ep':ep});
+                            $.ajax({
+                                datatype: 'json',
+                                url: '/getResult',
+                                type: 'POST',
+                                data: input,
+                                contentType: "application/json; charset=utf-8",
+                                success: function(message) {
+                                    const query = message['message']['query'],
+                                          output = message['message']['output'],
+                                          text = message['message']['text'];
+
+                                    $("#result").append('<b style="color: #336ca9">Result:</b><br>'+output+'<br><br><b style="color: #336ca9">Query:</b><br>'+query);
+                                    $("#result").append('<br><br>'+text);
+                                    // alert(JSON.stringify(output));
+                                    // alert( $("#result").val());
+
+                                }
+                            });
+                            $("#curr_prompt").empty();
+                            $("#curr_prompt").append('You just asked  -  '+$("#prompt").val());
+                            $("#prompt").val('');
+                        });
+                        
+                    }
+                })
+            }
+        });
+
+    </script>   
+</body>
