@@ -6,6 +6,9 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<!--    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>-->
+    <script src="../js/ep_tree.js"></script>
+    <script src="../js/ep_map.js"></script>
     <link rel="stylesheet" href="../css/base.css">
     <!--<script type="text/javascript">-->
         <!---->
@@ -49,6 +52,29 @@
 
 
     <script type="text/javascript">
+
+        function createOption(op, new_op, num){
+            var omit = '';
+            var disable = '';
+            if (ep_tree[op].omit != '') {
+                omit = ' [' + ep_tree[op].omit + ']'
+                disable = ' disabled';
+            }
+            var option = '<input type="radio" name="disease" value="'+op+'"'+disable+'> '+ep_map[op]+omit+'<br>';
+
+            if (new_op != "") {
+                omit = '';
+                disable = '';
+                if (ep_tree[new_op].omit != '') {
+                    omit = ' [' + ep_tree[new_op].omit + ']'
+                    disable = ' disabled';
+                }
+                option += '<button class="disease_link" style="color: #7f7f7f;" name="'+num+'" value="'+new_op+'">Parent: '+ep_map[new_op]+omit+'</button><br>';
+            }
+            option += '<br>'
+            return option
+        }
+
         $('#submit').click(function () {
             $("#result").empty;
             $("#curr_prompt").empty();
@@ -71,19 +97,22 @@
                     success: function(message){
                         var nlg_res = message['message']['answer'];
                         var text = message['message']['text'];
-                        var choice_dict = message['message']['ep_dict'];
+                        var choice_list = message['message']['ep_list'];
 
-                        alert(JSON.stringify(choice_dict));
+                        // alert(JSON.stringify(choice_list));
                         $('#img').hide();
 
-                        if (jQuery.isEmptyObject(choice_dict)) {
+                        if (jQuery.isEmptyObject(choice_list)) {
                             $("#form").append('<div class="scroll"><b>'+text+'</b><br><br>');
                             //$("#secret_box").val(nlg_res); // still need to post nlg_res there?
                         } else {
                             $("#form").append('<div class="scroll"><p style="color:#336ca9"><b>Please specify the disease you query:</b></p>');
-                            for (const key in choice_dict) {
-                                var option = '<label><input type="radio" name="disease" value="'+ key+'"> '+choice_dict[key]+'</label><br>';
-                                $("#form").append(option);
+                            for (var key in choice_list) {
+                                // console.log(key)
+                                var op = choice_list[key];
+                                var new_op = ep_tree[op].parent;
+                                var option = createOption(op, new_op, key);
+                                $("#form").append('<label id="label'+key+'">'+option+'</label>');
                             }
                             // todo: object is ordered by alphabets
                             $("#form").append('</div><br>');
@@ -91,6 +120,26 @@
                             $("#secret_box").val(nlg_res);
                             // alert(JSON.stringify($('#secret_box').val()));
                         }
+
+                        // // $('input[name="disease"]').closest('label').click(function () {
+                        // $('.disease').click(function () {
+                        //     var op_id = $(this).attr('value');
+                        //     var op_new_id = ''
+                        //     createOption(op_id, op_new_id);
+                        // });
+
+                        $('.disease_link').click(function () {
+                            var op_id = $(this).attr('value');
+                            var num = $(this).attr("name");
+                            var op_new_id = ep_tree[op_id].parent;
+                            var option = createOption(op_id, op_new_id, num);
+                            // alert(option);
+                            // var label_id = op+'&'+new_op;
+                            // $("label[name = "+op_old_id+"]")
+                            // $('#'+op_old_id).attr("id","op_id");
+                            $('#label'+num).empty();
+                            $('#label'+num).replaceWith('<label id="label'+num+'">'+option+'</label>');
+                        });
 
                         $('#sub').click(function () {
                             // TODO: what if no value is checked or no answer is filled?
@@ -122,11 +171,10 @@
                             $("#curr_prompt").append('You just asked  -  '+$("#prompt").val());
                             $("#prompt").val('');
                         });
-                        
+
                     }
                 })
             }
         });
-
     </script>   
 </body>

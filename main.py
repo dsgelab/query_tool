@@ -1,8 +1,8 @@
 import sqlite3
 import pandas as pd
 import numpy as np
-import pickle
-from utility import find_age_range, find_yr_range, txt_dict
+import pickle, json
+from utility import *
 from mingpt.trainer import QandADataset
 from mingpt.utils import sample
 import torch
@@ -10,26 +10,20 @@ import re
 from fuzzywuzzy import process
 from flask import Flask, request, jsonify
 from ontoma import OnToma
-otmap = OnToma()
-onto = json.load(open('/Users/feiwang/Documents/Projects/query_tool_contents/out_ontology_r6v1.json', 'r'))
 
+# define a list of paths
 db_path = '/Users/feiwang/Documents/Projects/query_tool_contents/registry.sl3'
 trainer_nlg_path = '/Users/feiwang/Documents/Projects/query_tool_contents/trainer_nlg.pickle'
 chrome_path = '/Users/feiwang/Documents/Projects/query_tool_contents/chromedriver'
-mesh_path = 'https://www.ncbi.nlm.nih.gov/mesh'
 word_list_path = '/Users/feiwang/Documents/Projects/query_tool_contents/latest_words.pickle'
 ep_path = '/Users/feiwang/Documents/Projects/query_tool_contents/FINNGEN_ENDPOINTS_DF8_Final_2021-09-02.xlsx'
+onto_mapping_path = '/Users/feiwang/Documents/Projects/query_tool_contents/out_ontology_r6v1.json'
 
 max_len = 40
 words = pickle.load(open(word_list_path, 'rb'))
 word2vec = {word: i for i, word in enumerate(words)}
 vec2word = {i: word for i, word in enumerate(words)}
 trainer_nlg = pickle.load(open(trainer_nlg_path, 'rb'))
-
-# Using Chrome to access web
-driver = webdriver.Chrome(chrome_path)
-driver.get(mesh_path)
-
 action_mapping = {
     'select avg ( age ) from long_registry': 'SELECT age,counts FROM fevent_mean_age WHERE',
     'select count ( * ) from long_registry': 'SELECT counts FROM fevent_count WHERE'
@@ -43,6 +37,8 @@ ep_df = ep_df[ep_df.OMIT.isna()][['NAME', 'LONGNAME']]
 ep_df = ep_df.dropna()
 ep_omit = dict(zip(ep_df.NAME, ep_df.LONGNAME))
 
+otmap = OnToma()
+onto = json.load(open(onto_mapping_path, 'r'))
 onto_efo, onto_desc = {}, {}
 for i in onto.keys():
     onto_result = onto[i].get('EFO', 'None')
@@ -69,14 +65,14 @@ def translate():
     nlg_res = nlg(prompt, trainer_nlg)
     print(nlg_res)
     if 'long_registry' in nlg_res:
-        ep_dict, txt = capture_ep(nlg_res, driver, txt)
+        ep_list, txt = capture_ep(nlg_res, txt)
     else:
-        ep_dict, txt = {}, 'Sorry, this is an irrelevant question. '
-    print(ep_dict)
+        ep_list, txt = {}, 'Sorry, this is an irrelevant question. '
+    print(ep_list)
     print(txt)
     msg = {
         'answer': nlg_res,
-        'ep_dict': ep_dict,
+        'ep_list': ep_list,
         'text': txt
     }
     # print(msg['answer'])
@@ -97,32 +93,16 @@ def nlg(prompt, trainer):
     return output
 
 
-def capture_ep(nlg_res, browser, txt):  # todo: replaced by lstm model
+def capture_ep(nlg_res, txt):  # todo: replaced by lstm model
     ep = re.findall('endpoint = " (.+) "', nlg_res)
     if len(ep) == 1:
-        browser.find_element_by_xpath('//*[@id="term"]').clear()
-        browser.find_element_by_xpath('//*[@id="term"]').send_keys(ep[0])
-        browser.find_element_by_xpath('//*[@id="search"]').click()
-        try:
-            mesh_ep = browser.find_element_by_xpath(
-                '/html/body/div[1]/div[1]/form/div[1]/div[4]/div/div[5]/div/h1/span').text
-        except NoSuchElementException:
-            try:
-                browser.find_element_by_xpath(
-                    '/html/body/div[1]/div[1]/form/div[1]/div[4]/div/div[5]/div[1]/div[2]/p/a').click()
-                mesh_ep = browser.find_element_by_xpath(
-                    '/html/body/div[1]/div[1]/form/div[1]/div[4]/div/div[5]/div/h1/span').text
-            except NoSuchElementException:
-                mesh_ep = ep
-        ep_options = process.extract(mesh_ep, ep_display.keys())
-        ep_options = list(set(list(zip(*ep_options))[0]))[:3]
-        ep_codes = [ep_display[i] for i in ep_options]
-        children_long = [get_children(ep_code) for ep_code in ep_codes]
-        parent_long = [get_parent(ep_code) for ep_code in ep_codes]
-        res = dict(zip(['name', 'parent', 'children'], list(zip(ep_options, parent_long, children_long))))
-        return dict(zip(ep_codes, res)), txt
+        eps = map_onto(ep[0])
+        if type(eps) == str:
+            return [], txt + txt_dict['ep_failed_to_find']
+        else:
+            return eps, txt
     else:
-        return {}, txt + txt_dict['ep_failed_to_find']
+        return [], txt + txt_dict['ep_failed_to_find']
 
 
 def map_onto(disease):
@@ -145,14 +125,6 @@ def map_onto(disease):
 #         ontos[0].id_normalised.split(':')[1]
 #     else:
 #         [ontos[i].id_normalised.split(':')[1] for i in ontos]
-
-def get_keys_by_value(dictOfElements, valueToFind):
-    listOfKeys = list()
-    listOfItems = dictOfElements.items()
-    for item  in listOfItems:
-        if item[1] == valueToFind:
-            listOfKeys.append(item[0])
-    return  listOfKeys
 
 
 def write_query(nlg_res, ep):

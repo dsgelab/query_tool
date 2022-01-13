@@ -36,6 +36,7 @@ def find_age_range(age_start, age_end, txt):
 
     return ' AND CAST(age_start AS INT) >= '+str(a_start)+' AND CAST(age_end AS INT) <= '+str(a_end), txt
 
+
 def find_yr_range(yr_start, yr_end, txt):
     if yr_start > yr_end:
         yr = yr_start
@@ -61,3 +62,12 @@ def find_yr_range(yr_start, yr_end, txt):
         yr_end = year_bins[np.digitize(yr_end, year_bins)] - 1
 
     return ' AND yr_start >= ' + str(yr_start) + ' AND yr_end <= ' + str(yr_end), txt
+
+
+def get_keys_by_value(dictOfElements, valueToFind):
+    listOfKeys = list()
+    listOfItems = dictOfElements.items()
+    for item in listOfItems:
+        if item[1] == valueToFind:
+            listOfKeys.append(item[0])
+    return listOfKeys
