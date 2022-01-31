@@ -3,41 +3,51 @@ import pandas as pd
 import numpy as np
 import pickle, json
 from utility import *
-from mingpt.trainer import QandADataset
-from mingpt.utils import sample
+from model_utils import *
+# from model_utils import BertClassifier
 import torch
 import re
 from fuzzywuzzy import process
 from flask import Flask, request, jsonify
-from ontoma import OnToma
+# from ontoma import OnToma
+from transformers import BertTokenizer
+import warnings
+warnings.filterwarnings("ignore")
 
 # define a list of paths
-db_path = '/Users/feiwang/Documents/Projects/query_tool_contents/registry.sl3'
-trainer_nlg_path = '/Users/feiwang/Documents/Projects/query_tool_contents/trainer_nlg.pickle'
-chrome_path = '/Users/feiwang/Documents/Projects/query_tool_contents/chromedriver'
-word_list_path = '/Users/feiwang/Documents/Projects/query_tool_contents/latest_words.pickle'
-ep_path = '/Users/feiwang/Documents/Projects/query_tool_contents/FINNGEN_ENDPOINTS_DF8_Final_2021-09-02.xlsx'
-onto_mapping_path = '/Users/feiwang/Documents/Projects/query_tool_contents/out_ontology_r6v1.json'
+db_path = '/home/fey/Projects/query_tool_contents/registry.sl3'
+trainer_clf_path = '/home/fey/Projects/query_tool_contents/new_clf_trainer.pickle'
+trainer_nlg_path = '/home/fey/Projects/query_tool_contents/trainer_nlg.pickle'
+word_list_path = '/home/fey/Projects/query_tool_contents/latest_words.pickle'
+ep_path = '/home/fey/Projects/query_tool_contents/ep_'
+onto_mapping_path = '/home/fey/Projects/query_tool_contents/out_ontology_r6v1.json'
+efo_data_path = '/home/fey/Projects/query_tool_contents/efo_data'
 
-max_len = 40
-words = pickle.load(open(word_list_path, 'rb'))
+with open(word_list_path, 'rb') as f:
+    words = pickle.load(f)
 word2vec = {word: i for i, word in enumerate(words)}
 vec2word = {i: word for i, word in enumerate(words)}
-trainer_nlg = pickle.load(open(trainer_nlg_path, 'rb'))
+del words
+
+tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+
+with open(trainer_clf_path, 'rb') as f:
+    trainer_clf = pickle.load(f)
+with open(trainer_nlg_path, 'rb') as f:
+    trainer_nlg = pickle.load(f)
+
 action_mapping = {
     'select avg ( age ) from long_registry': 'SELECT age,counts FROM fevent_mean_age WHERE',
     'select count ( * ) from long_registry': 'SELECT counts FROM fevent_count WHERE'
 }
 
-# prepare a dictionary for finngen ep mapping
-ep_df = pd.read_excel(ep_path, sheet_name='Sheet 1', usecols=['NAME', 'LONGNAME', 'OMIT'])
-ep_df = ep_df[ep_df.LONGNAME.notna()]
-ep_full = dict(zip(ep_df.NAME, ep_df.LONGNAME))
-ep_df = ep_df[ep_df.OMIT.isna()][['NAME', 'LONGNAME']]
-ep_df = ep_df.dropna()
-ep_omit = dict(zip(ep_df.NAME, ep_df.LONGNAME))
+# prepare dictionaries for finngen ep mapping
+ep_full = json.load(open(ep_path + 'full.json', 'r'))
+ep_omit = json.load(open(ep_path + 'omit.json', 'r'))
 
-otmap = OnToma()
+otmap = pd.read_csv(efo_data_path+'/synonyms.tsv', sep='\t')
+terms = pd.read_csv(efo_data_path+'/terms.tsv', sep='\t')
+
 onto = json.load(open(onto_mapping_path, 'r'))
 onto_efo, onto_desc = {}, {}
 for i in onto.keys():
@@ -47,11 +57,12 @@ for i in onto.keys():
             onto_efo[i] = onto[i]['EFO'][0]
         else:
             for j in range(len(onto[i]['EFO'])):
-                onto_efo[i+'-'+str(j)] = onto[i]['EFO'][j]
+                onto_efo[i + '-' + str(j)] = onto[i]['EFO'][j]
     if onto[i].get('description'):
         onto_desc[i] = onto[i]['description']
 
 app = Flask(__name__, static_url_path='')
+
 
 @app.route('/')
 def root():
@@ -61,17 +72,24 @@ def root():
 @app.route("/translate", methods=["POST"])
 def translate():
     txt = ''
-    prompt = 'input : ' + request.json["prompt"]
-    nlg_res = nlg(prompt, trainer_nlg)
-    print(nlg_res)
-    if 'long_registry' in nlg_res:
-        ep_list, txt = capture_ep(nlg_res, txt)
-    else:
+    prompt = request.json["prompt"]
+
+    res = clf(prompt, trainer_clf)
+    if res == 0:
+        res = 'No answer'
         ep_list, txt = {}, 'Sorry, this is an irrelevant question. '
+    else:
+        res = nlg('input : ' + prompt, trainer_nlg)
+        print(res)
+        if 'long_registry' in res:
+            ep_list, txt = capture_ep(res, txt)
+        else:
+            ep_list, txt = {}, 'Sorry, this is an irrelevant question. '
+
     print(ep_list)
     print(txt)
     msg = {
-        'answer': nlg_res,
+        'answer': res,
         'ep_list': ep_list,
         'text': txt
     }
@@ -81,7 +99,17 @@ def translate():
     return jsonify(message=msg)
 
 
-def nlg(prompt, trainer):
+def clf(prompt, trainer):
+    input_id = tokenizer(prompt, padding='max_length', max_length=64,
+                         truncation=True, return_tensors="pt")['input_ids']
+    output = trainer.model(input_id)
+    output = torch.sigmoid(output)[:, 1]
+    output = torch.tensor([1 if i >= 0.5 else 0 for i in output])
+
+    return output.item()
+
+
+def nlg(prompt, trainer, max_len=40):
     if re.search('^\w[\?\.]$', prompt[-2:]):
         prompt = prompt[:-1] + ' ?'
     prompt = prompt.split(' ')
@@ -106,13 +134,14 @@ def capture_ep(nlg_res, txt):  # todo: replaced by lstm model
 
 
 def map_onto(disease):
-    ontos = otmap.find_term(disease)
     try:
-        mapped_id = ontos[0].id_normalised.split(':')
-        if len(mapped_id) == 0:
+        onto = otmap[otmap.normalised_synonym == disease]
+        if len(onto) == 0:
             return 'fail'
+        mapped_id = onto.iloc[0, 1].split(':')
         if mapped_id[0] != 'EFO':
-            mapped_eps = process.extract(ontos[0].label, ep_full.values())[:3]
+            label = terms[terms.normalised_id == onto.iloc[0, 1]].normalised_label.tolist()[0]
+            mapped_eps = process.extract(label, ep_full.values())[:3]
             mapped_ep_id = [list(ep_full.keys())[list(ep_full.values()).index(i[0])] for i in mapped_eps]
             return mapped_ep_id
         else:
@@ -121,6 +150,8 @@ def map_onto(disease):
     except Exception as e:
         print(e)
         return 'error'
+
+
 #     if len(this) == 1:
 #         ontos[0].id_normalised.split(':')[1]
 #     else:

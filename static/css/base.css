@@ -7,3 +7,10 @@
     background: white no-repeat center center fixed;
     background-size: cover;
 }
+
+.disease_link {
+    color: #6184a8;
+    border: none;
+    padding: 0;
+    background: none;
+}
