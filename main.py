@@ -137,7 +137,12 @@ def map_onto(disease):
     try:
         onto = otmap[otmap.normalised_synonym == disease]
         if len(onto) == 0:
-            return 'fail'
+            mapped_eps = process.extract(disease, ep_full.values())[:3]
+            if mapped_eps[1][1] < 75:
+                return 'fail'
+            else:
+                mapped_ep_id = [list(ep_full.keys())[list(ep_full.values()).index(i[0])] for i in mapped_eps]
+                return mapped_ep_id
         mapped_id = onto.iloc[0, 1].split(':')
         if mapped_id[0] != 'EFO':
             label = terms[terms.normalised_id == onto.iloc[0, 1]].normalised_label.tolist()[0]
@@ -150,12 +155,6 @@ def map_onto(disease):
     except Exception as e:
         print(e)
         return 'error'
-
-
-#     if len(this) == 1:
-#         ontos[0].id_normalised.split(':')[1]
-#     else:
-#         [ontos[i].id_normalised.split(':')[1] for i in ontos]
 
 
 def write_query(nlg_res, ep):
