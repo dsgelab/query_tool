@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ee544423-77e7-4251-867f-a1cb9b6b6cea" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/data_generation/custom_data/data_generation.py" afterDir="false" />
+    <list default="true" id="ee544423-77e7-4251-867f-a1cb9b6b6cea" name="Changes" comment="refine the structure">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data_generation/query_data/data_generation.py" beforeDir="false" afterPath="$PROJECT_DIR$/data_generation/query_data/data_generation.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -94,8 +94,16 @@
       <workItem from="1643114709548" duration="381000" />
       <workItem from="1643851530249" duration="1000" />
       <workItem from="1643914386448" duration="354000" />
-      <workItem from="1644936487123" duration="325000" />
+      <workItem from="1644936487123" duration="3423000" />
     </task>
+    <task id="LOCAL-00001" summary="refine the structure">
+      <created>1644937332985</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1644937332985</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -112,6 +120,10 @@
       </map>
     </option>
     <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="refine the structure" />
+    <option name="LAST_COMMIT_MESSAGE" value="refine the structure" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/query_tool$main.coverage" NAME="main Coverage Results" MODIFIED="1643114772091" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
