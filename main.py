@@ -14,14 +14,14 @@ from transformers import BertTokenizer
 import warnings
 warnings.filterwarnings("ignore")
 
-# define a list of paths
-db_path = '/home/fey/Projects/query_tool_contents/registry.sl3'
-trainer_clf_path = '/home/fey/Projects/query_tool_contents/new_clf_trainer.pickle'
-trainer_nlg_path = '/home/fey/Projects/query_tool_contents/trainer_nlg.pickle'
-word_list_path = '/home/fey/Projects/query_tool_contents/latest_words.pickle'
-ep_path = '/home/fey/Projects/query_tool_contents/ep_'
-onto_mapping_path = '/home/fey/Projects/query_tool_contents/out_ontology_r6v1.json'
-efo_data_path = '/home/fey/Projects/query_tool_contents/efo_data'
+# define a list of paths.
+db_path = '../query_tool_contents/registry.sl3'
+trainer_clf_path = '../query_tool_contents/new_clf_trainer.pickle'
+trainer_nlg_path = '../query_tool_contents/trainer_nlg.pickle'
+word_list_path = '../query_tool_contents/latest_words.pickle'
+ep_path = '../query_tool_contents/ep_'
+onto_mapping_path = '../query_tool_contents/out_ontology_r6v1.json'
+efo_data_path = '../query_tool_contents/efo_data'
 
 with open(word_list_path, 'rb') as f:
     words = pickle.load(f)
@@ -265,4 +265,4 @@ def getResult():
 
 if __name__ == '__main__':
     # app.run(debug=True)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='localhost', port=5000)

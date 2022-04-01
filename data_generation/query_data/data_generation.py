@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 import re
 
 # a = '/data/processed_data/detailed_longitudinal/detailed_longitudinal.csv'
-first_event_file = '/data/processed_data/endpointer/wide_first_events_endpoints_2021-09-04_densified.txt'
-demo_file = '/data/processed_data/minimal_phenotype/minimal_phenotype_file.csv'
+first_event_file = '/data/processed_data/endpointer/densified_first_events_DF8_all_endpoints_2021-09-04.txt'
+demo_file = '/data/processed_data/minimal_phenotype/minimal_phenotype_2022-02-17.csv'
 # d = '/data/processed_data/endpointer/main/finngen_endpoints_longitudinal_04-09-2021_v3.txt.ALL'
-death_file = '/data/processed_data/sf_death/thl2019_1776_ksyy_vuosi.csv.finreg_IDsp'
-'thl2019_1776_ksyy_tutkimus.csv.finreg_IDsp'
 
 demo = pd.read_csv(demo_file)
+death1 = pd.read_csv(death_file1)
+death2 = pd.read_csv(death_file2)
 death = pd.read_csv('/home/fwang/cod.txt', sep='\t', header=None)
 death.columns = ['FINREGISTRYID', 'EVENT_TYPE', 'EVENT_AGE', 'EVENT_YEAR', 'ICDVER', 'ENDPOINT']
 death['age'] = np.floor(death.EVENT_AGE)
