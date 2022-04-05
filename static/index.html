@@ -28,16 +28,20 @@
                 <u>Currently, we can process two types of questions.</u><br>
                 <i>1) Number of people diagnosed with one disease</i><br>
                 <i>2) Mean age at the first event of one disease</i><br>
-<!--                <i>3) Number of people who die of one disease</i><br>-->
-<!--                <i>4) Mean age of people who die of one disease</i><br>--><br>
-                <input type="text" id="prompt" placeholder="What is your question?" value="" style="width: 95%; margin: 5px; border-radius:5px;border: 2px solid #336ca9; padding:10px; text-align: center; font-size: 12pt;"><br>
-                <button id="submit" style="width: 100px; margin-top: 15px; margin-left: 5px; border-radius:5px;border: 2px solid #336ca9; text-align: center; color: white; background: #336ca9; font-size: 12pt; padding:10px;">
-                    Query
-                </button>
+                <i>3) Number of people who die of one disease</i><br>
+                <i>4) Mean age of people who die of one disease</i><br><br>
+                <input type="text" id="prompt" placeholder="What is your question?" value="" class="blue_frame_input"><br>
+                <button id="question_submit" class="blue_button">Query</button>
                 <img src="loading.gif" id="img" style="height: 45px; display:none;">
                 <div id="curr_prompt" style="width: 95%; margin: 5px; font-size: 12pt; padding:10px;"><br><br></div>
                 <b><h5>Answer: </h5></b>
-                <div class="scroll" id="result" style="height:200px; width: 95%;margin: 5px; border-radius:5px;border: 2px solid #336ca9; font-size: 12pt; padding:10px;"></div>
+                <div class="scroll" id="result" style="height:200px; width: 95%;margin: 5px; border-radius:5px;border: 2px solid #336ca9; font-size: 12pt; padding:10px;"></div><br>
+                <b><h5>Feedback: </h5></b>
+                Do you think this answer is accurate according to your question?&nbsp;&nbsp;
+                <input type="radio" name="fb" value=1> Yes&nbsp;&nbsp;
+                <input type="radio" name="fb" value=0> No<br><br>
+                <input id="comment" placeholder="Overall, do you have any comments?" value="" class="blue_frame_input">
+                <button id="feedback_submit" class="blue_button" style="background: #9a9a9a;" disabled>Save</button>
             </div>
             <div class="col-md-5">
                 <!-- <input id="prior_text" value="" style="width: 95%; margin: 15px; border:transparent; text-align: center;font-size: 12pt; padding:15px;"> -->
@@ -74,7 +78,7 @@
             return option
         }
 
-        $('#submit').click(function () {
+        $('#question_submit').click(function () {
             $("#result").empty;
             $("#curr_prompt").empty();
             $("#curr_prompt").append('<br><br>');
@@ -115,7 +119,7 @@
                             }
                             // todo: object is ordered by alphabets
                             $("#form").append('</div><br>');
-                            $("#form").append('<button id="sub">Submit</button>');
+                            $("#form").append('<button id="disease_submit">Submit</button>');
                             $("#secret_box").val(nlg_res);
                             // alert(JSON.stringify($('#secret_box').val()));
                         }
@@ -140,7 +144,7 @@
                             $('#label'+num).replaceWith('<label id="label'+num+'">'+option+'</label>');
                         });
 
-                        $('#sub').click(function () {
+                        $('#disease_submit').click(function () {
                             // TODO: what if no value is checked or no answer is filled?
 
                             $(this).prop("disabled",true);
@@ -161,19 +165,42 @@
 
                                     $("#result").append('<b style="color: #336ca9">Result:</b><br>'+output+'<br><br><b style="color: #336ca9">Query:</b><br>'+query);
                                     $("#result").append('<br><br>'+text);
+                                    $("#secret_box").val(query);
                                     // alert(JSON.stringify(output));
                                     // alert( $("#result").val());
-
                                 }
                             });
                             $("#curr_prompt").empty();
-                            $("#curr_prompt").append('You just asked  -  '+$("#prompt").val());
-                            $("#prompt").val('');
+                            $("#feedback_submit").attr('disabled', false);
+                            $("#feedback_submit").css("background-color","#336ca9");
                         });
 
                     }
                 })
             }
+        });
+
+        $('#feedback_submit').click(function () {
+            var feedback = $("input[name='fb']:checked").val();
+            var question = $("#prompt").val()
+            $("#curr_prompt").append('You just asked  -  '+$("#prompt").val());
+            $("#prompt").val()
+            $("#prompt").val('');
+            var query = $("#secret_box").val();
+            var comment = $("#comment").val()
+            var input = JSON.stringify({'question':question, 'query':query, 'feedback':feedback, 'comment':comment});
+            $.ajax({
+                datatype: 'json',
+                url: '/getFeedback',
+                type: 'POST',
+                data: input,
+                contentType: "application/json; charset=utf-8",
+                success: function() {
+                    $("#feedback_submit").attr('disabled', true);
+                    $("input[name='fb']:checked").prop('checked', false);
+                    $("#feedback_submit").css("background-color","#9a9a9a");
+                }
+            });
         });
     </script>   
 </body>

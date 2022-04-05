@@ -1,4 +1,5 @@
 import sqlite3
+import datetime
 import pandas as pd
 import numpy as np
 import pickle, json
@@ -12,6 +13,7 @@ from flask import Flask, request, jsonify
 # from ontoma import OnToma
 from transformers import BertTokenizer
 import warnings
+from csv import writer
 warnings.filterwarnings("ignore")
 
 # define a list of paths.
@@ -22,6 +24,7 @@ word_list_path = '../query_tool_contents/latest_words.pickle'
 ep_path = '../query_tool_contents/ep_'
 onto_mapping_path = '../query_tool_contents/out_ontology_r6v1.json'
 efo_data_path = '../query_tool_contents/efo_data'
+feedback_path = '../query_tool_contents/feedback.csv'
 
 with open(word_list_path, 'rb') as f:
     words = pickle.load(f)
@@ -253,14 +256,21 @@ def getResult():
 
     return jsonify(message=msg)
 
-    # try:
-    #     write_query(nlg_res, ep, txt)
-    #     return jsonify(
-    #         message={"part1": "Your risk of having " + outcome + " is ", "part2": "{0:.2%}".format(abs_risk)})
-    # except IndexError as e1:
-    #     print('Error type:' + str(e1))
-    #     return jsonify(message={"part1": "No record is found with the input: \n", "part2": str(
-    #         [prior, outcome, datetime.datetime.today().year - int(result[2]), result[3]])})
+
+@app.route("/getFeedback", methods=["POST"])
+def getFeedback():
+    question = request.json["question"]
+    query = request.json["query"]
+    feedback = request.json["feedback"]
+    comment = request.json["comment"]
+    list_of_elem = [datetime.datetime.today().strftime('%Y-%m-%d'), question, query, feedback, comment]
+    print(list_of_elem)
+    with open(feedback_path, 'a+', newline='') as write_obj:
+        # Create a writer object from csv module
+        csv_writer = writer(write_obj)
+        # Add contents of list as last row in the csv file
+        csv_writer.writerow(list_of_elem)
+    return jsonify(message='done')
 
 
 if __name__ == '__main__':
