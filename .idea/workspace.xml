@@ -4,11 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ee544423-77e7-4251-867f-a1cb9b6b6cea" name="Changes" comment="app deployment">
+    <list default="true" id="ee544423-77e7-4251-867f-a1cb9b6b6cea" name="Changes" comment="add feedback to the app">
+      <change afterPath="$PROJECT_DIR$/data_generation/data_for_querying/data_generation.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/model/biobert_v1.1_pubmed/bert_config.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/model/biobert_v1.1_pubmed/model.ckpt-1000000.data-00000-of-00001" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/model/biobert_v1.1_pubmed/model.ckpt-1000000.index" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/model/biobert_v1.1_pubmed/model.ckpt-1000000.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/model/biobert_v1.1_pubmed/vocab.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/model/trainer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/css/base.css" beforeDir="false" afterPath="$PROJECT_DIR$/static/css/base.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/static/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data_generation/custom_data/data_generation.py" beforeDir="false" afterPath="$PROJECT_DIR$/model/model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data_generation/query_data/data_generation.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,11 +49,16 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/model" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/model" />
+    </key>
   </component>
   <component name="RunManager">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
@@ -100,6 +111,10 @@
       <workItem from="1648160710595" duration="2104000" />
       <workItem from="1648574420125" duration="5000" />
       <workItem from="1648792113914" duration="6288000" />
+      <workItem from="1649139991550" duration="325000" />
+      <workItem from="1649240787697" duration="2933000" />
+      <workItem from="1649321342953" duration="542000" />
+      <workItem from="1650464020784" duration="4985000" />
     </task>
     <task id="LOCAL-00001" summary="refine the structure">
       <created>1644937332985</created>
@@ -122,7 +137,14 @@
       <option name="project" value="LOCAL" />
       <updated>1648792137131</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="add feedback to the app">
+      <created>1649140025229</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1649140025229</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -144,7 +166,8 @@
     <MESSAGE value="refine the structure" />
     <MESSAGE value="update data source" />
     <MESSAGE value="app deployment" />
-    <option name="LAST_COMMIT_MESSAGE" value="app deployment" />
+    <MESSAGE value="add feedback to the app" />
+    <option name="LAST_COMMIT_MESSAGE" value="add feedback to the app" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/query_tool$main.coverage" NAME="main Coverage Results" MODIFIED="1643114772091" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
