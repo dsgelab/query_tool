@@ -1,6 +1,9 @@
+
+content_path = '/Users/feiwang/Documents/Projects/query_tool_contents'
+
 max_seq_length = 64
 
-tokenizer = BertTokenizer(vocab_file='/Users/feiwang/Documents/Projects/biobert/biobert_v1.1_pubmed/vocab.txt', do_lower_case=False)
+tokenizer = BertTokenizer(vocab_file=content_path+'/biobert_v1.1_pubmed/vocab.txt', do_lower_case=False)
 
 # check if GPU available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -8,7 +11,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 config = BertConfig.from_json_file('biobert_v1.1_pubmed/config.json')
 
 # load the pretained biobert model
-tmp_d = torch.load('biobert_v1.1_pubmed/pytorch_model.bin', map_location=device)
+tmp_d = torch.load(content_path+'/biobert_v1.1_pubmed/pytorch_model.bin', map_location=device)
 state_dict = OrderedDict()
 for i in list(tmp_d.keys())[:199]:
     x = i
